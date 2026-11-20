@@ -1,0 +1,42 @@
+services:
+  api:
+    build: .
+    image: diag-recovery:1.0.0
+    pid: host
+    environment:
+      # 共享宿主 pid 命名空间后，/proc 即可看到 demo（以及真实下载）进程
+      ARCHIVE_DIR: /data/archive
+      RECOVERY_DIR: /data/recovery
+      PROC_ROOT: /proc
+    volumes:
+      - diag-data:/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  demo:
+    image: diag-recovery:1.0.0
+    pid: host
+    depends_on:
+      - api
+    environment:
+      ARCHIVE_DIR: /data/archive
+    volumes:
+      - diag-data:/data
+    command:
+      - demo
+      - --archive
+      - /data/archive
+      - --package
+      - diag-bundle-a.tar.gz=10485760
+      - --package
+      - diag-bundle-b.zip=5242880
+      - --holders
+      - "2"
+      - --pidfile
+      - /data/recovery/demo-pids.json
+      - --duration
+      - "86400"
+
+volumes:
+  diag-data:
